@@ -1,5 +1,7 @@
 # IFSB-DataHub
 
+[![DOI](https://zenodo.org/badge/1331372931.svg)](https://doi.org/10.5281/zenodo.21895282)
+
 A reusable, reproducible pipeline that turns the Islamic Financial Services Board's
 **Prudential and Structural Islamic Financial Indicators (PSIFIs)** into a harmonised
 analysis panel — covering the banking, takāful, Islamic capital markets and digital
@@ -98,7 +100,16 @@ scripts.
 ## Citing this repository
 
 If you use this pipeline or the harmonised panel, please cite both the software and the
-accompanying data note. See `CITATION.cff` for the machine-readable version.
+accompanying data note.
+
+> Benkaddour, A. (2026). *IFSB-DataHub: a reproducible pipeline for the IFSB Prudential
+> and Structural Islamic Financial Indicators* (v1.0.0). Zenodo.
+> https://doi.org/10.5281/zenodo.21895283
+
+The concept DOI **10.5281/zenodo.21895282** always resolves to the most recent
+version; the version DOI **10.5281/zenodo.21895283** pins release v1.0.0
+specifically. Cite the version DOI when reproducibility matters, the concept DOI when
+referring to the project as a whole. See `CITATION.cff` for the machine-readable form.
 
 ## Licence
 
