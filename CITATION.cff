@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this pipeline or the harmonised panel, please cite it as below."
+title: "IFSB-DataHub: a reproducible pipeline for the IFSB Prudential and Structural Islamic Financial Indicators"
+abstract: >-
+  An R pipeline that harmonises the Islamic Financial Services Board's PSIFIs database
+  (banking, takaful, Islamic capital markets, digital financial services) into an
+  analysis-ready panel, correcting unit heterogeneity, year-to-date cumulation and
+  within-year ratio gradients, with a full decisions log.
+type: software
+authors:
+  - family-names: Benkaddour
+    given-names: Achouak
+    orcid: "https://orcid.org/0000-0002-5086-542X"
+    affiliation: "University Hadj Moussa Ag Akhamouk, Tamanrasset, Algeria"
+    email: Ach.Benkaddour@univ-tam.dz
+version: 1.0.0
+date-released: "2026-08-11"
+license: MIT
+repository-code: "https://github.com/achouakbenkaddour/ifsb-datahub"
+keywords:
+  - Islamic finance
+  - takaful
+  - PSIFIs
+  - reproducible research
+  - panel data
