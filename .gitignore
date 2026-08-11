@@ -1,0 +1,17 @@
+raw/
+*.xlsx
+*.xls
+!docs/*.xlsx
+clean/*
+!clean/panel_takaful_uncert.csv
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+figures/
+.DS_Store
+Thumbs.db
+.Renviron
+.env
+*.key
