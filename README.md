@@ -1,118 +1,105 @@
-# IFSB-DataHub
+# IFSB-DataHub — takāful data-paper replication release
 
-[![DOI](https://zenodo.org/badge/1331372931.svg)](https://doi.org/10.5281/zenodo.21895282)
+This repository rebuilds the harmonised quarterly takāful panel used in the data paper
+from manually downloaded Islamic Financial Services Board (IFSB) PSIFIs workbooks.
 
-A reusable, reproducible pipeline that turns the Islamic Financial Services Board's
-**Prudential and Structural Islamic Financial Indicators (PSIFIs)** into a harmonised
-analysis panel — covering the banking, takāful, Islamic capital markets and digital
-financial services segments.
+**Reference source extraction:** 2026-07-19.  The paper's fixed analytical window is
+**2019Q1–2023Q4**.  The window is explicit in `06_extract_takaful_panel.R`, so later
+observations present in the same portal export cannot silently enter the released panel.
 
-The PSIFIs database is close to unexploited in the insurance and banking literature.
-It is usable, but **not as downloaded**: units are not harmonised across jurisdictions,
-most countries report contributions cumulatively within the calendar year, and the
-published ratios carry the same within-year gradient at source. This pipeline documents
-and corrects those conventions, and logs every judgement made along the way.
+## Canonical released product
 
-Extraction date of the reference release: **2026-07-19**. The portal is revised, so the
-extraction date should always be reported alongside any result.
+`clean/panel_takaful_harmonised.csv` contains 120 jurisdiction-quarters for ARE, BHR,
+BRN, JOR, MYS, NGA and SAU.  It contains published indicators, raw contribution levels,
+de-cumulated quarterly flows and the inferred reporting-mode classification.
 
-## What this repository contains
+`clean/panel_takaful_uncert.csv` is a companion-study derivative only; WUI/COVID/specification
+variables are not part of the data-paper resource.
 
-```
-scripts/     R pipeline, run in order 00 -> 06
-docs/        variable dictionary (auto-generated) + decisions log + data sources
-clean/       published derived panels (see "What is and is not published" below)
-figures/     country x quarter coverage maps by segment
-raw/         NOT tracked — see docs/DATA_SOURCES.md to rebuild it
-```
+## Rebuilding from the original IFSB download
 
-## Reproducing the panel
+1. The directory `raw/ifsb/` is already present in the release; it contains only the
+   placeholder `RAW_FILES_GO_HERE.txt`.
+2. Put the original IFSB insurance workbook there **without editing its contents**.
+   The script accepts the portal filename such as
+   `ISLAMIC_INSURANCE_DATA_202607191918.xlsx`; no renaming is required.
+3. From the repository root run:
 
 ```r
 Rscript scripts/00_setup.R
 Rscript scripts/01_import_psifis.R
-Rscript scripts/02_import_turkey_windows.R
 Rscript scripts/03_build_master.R
-Rscript scripts/04_coverage_report.R
-Rscript scripts/05_import_wui.R
 Rscript scripts/06_extract_takaful_panel.R
+Rscript scripts/07_verify_release.R
+Rscript scripts/08_make_figures.R
 ```
 
-`06_extract_takaful_panel.R` is part of this repository rather than of any single paper:
-it applies the reporting-mode identification and within-year differencing described
-below, and produces `clean/panel_takaful_uncert.rds` — the corrected takaful panel of
-120 country-quarters covering all seven reporting jurisdictions (ARE, BHR, BRN, JOR,
-MYS, NGA, SAU), merged with country-level and global uncertainty series. Anyone using
-the takaful segment for any question needs it. Paper-specific sample restrictions,
-dummies and transformations are applied downstream, in the analysis repositories that
-consume this panel.
+For the canonical data paper, **only the Islamic-insurance PSIFIs workbook is required**.
+The banking, capital-markets, detailed-financial-statements, Turkey-windows and WUI files
+are optional and are imported/appended only when present or when their optional scripts
+are run.
 
-Required packages: `readxl`, `dplyr`, `tidyr`, `stringr`, `purrr`, `readr`, `openxlsx`.
+The final command regenerates Figures 1-4 directly from the canonical CSV into `figures/`.
+The plots use black/white, line types and markers so interpretation does not depend on colour.
 
-### What is and is not published
+Required R packages: `readxl`, `dplyr`, `tidyr`, `stringr`, `purrr`, `readr`, `openxlsx`, `digest`.
 
-Published in `clean/`: the corrected takaful analysis panel (120 country-quarters) and
-the variable dictionary. These are substantively transformed products — reporting modes
-identified, within-year differencing applied, variables harmonised and documented.
+## What is checked
 
-Not published: the full multi-segment master table. It is a near-complete reformatting
-of the source database rather than a derived product, it falls under the same
-redistribution constraints as the raw files, and it is regenerable by running the
-pipeline. Run `03_build_master.R` to rebuild it locally.
+- `00_setup.R`, when run directly, prints SHA-256 hashes for manually supplied raw files.
+- `01_import_psifis.R` preserves source currency, scale, exchange rate and portal USD value.
+- `06_extract_takaful_panel.R` fixes the paper window at 2019Q1–2023Q4. For each jurisdiction-year and contribution series, a year is eligible only with at least three non-missing consecutive quarters; it is cumulative only if every successive observed value is strictly larger than its predecessor. The jurisdiction-level YTD share is the fraction of eligible years satisfying that rule, with a 0.60 classification threshold.
+- De-cumulation never bridges a missing quarter.
+- `07_verify_release.R` requires exactly 120 unique rows, seven jurisdictions, the five
+  expected YTD-pattern jurisdictions, positive corrected flows, and TP07 equality with
+  its own published numerator/denominator components. It also repeats the reporting-mode
+  classifier across all four gross/net, general/family contribution series, writes a
+  leave-one-jurisdiction-out retention-variance diagnostic, and checks the canonical
+  panel against the deposited derivative on shared fields within tolerance 1e-6.
+- `08_make_figures.R` regenerates the four manuscript figures from `clean/panel_takaful_harmonised.csv`; the manuscript captions carry the fixed 19 July 2026 source-extraction date, while the PNG files contain plot content only and use non-colour encodings. Outputs are prepared at 300 dpi.
+- Unit/FX checks are diagnostics, not silent corrections.  In the 2026-07-19 source
+  vintage, scale code `G` behaves as unscaled/actual values; when source currency is
+  labelled USD, the portal FX field is not applied by the diagnostic formula.
 
-Raw files are not distributed here. `docs/DATA_SOURCES.md` gives the exact download
-path for each file, the expected file name, and a checksum so you can verify that your
-extract matches the one used for the reference release.
+No values are imputed.
 
-## Three reporting conventions this pipeline handles
+## End-to-end runtime verification
 
-1. **Units are not harmonised, and the portal's own conversion fails.** Multipliers
-   differ by jurisdiction and the supplied US-dollar column is computed inconsistently.
-   The pipeline works in local-currency logs with country fixed effects, so the unit
-   problem is differenced away rather than papered over.
-2. **Year-to-date cumulation.** Five of seven takāful jurisdictions report contributions
-   cumulatively within the calendar year; two report quarterly flows, and nothing in the
-   field labels distinguishes them. Raw fourth-quarter figures overstate the true flow by
-   a factor of about four on average. The pipeline identifies the reporting mode country
-   by country and applies within-year first differences.
-3. **Ratios carry a within-year gradient at source.** Published retention and expense
-   ratios are taken exactly as disseminated and are never reconstructed. Values above
-   100 percent are retained rather than winsorised: they carry information about the
-   cession calendar, and removing them would delete first quarters selectively.
+On 2026-09-12 the canonical workflow was run successfully in R 4.4.1 from the original
+`ISLAMIC_INSURANCE_DATA_202607191918.xlsx` workbook using the six commands shown above.
+The run completed through `08_make_figures.R`. The structural verifier returned:
 
-Missingness is structural rather than random — it follows jurisdictions and variables,
-so listwise deletion removes countries rather than observations. Control sets should be
-chosen deliberately, and the retained jurisdictions reported for each specification.
+```text
+07_verify_release.R : ALL STRUCTURAL CHECKS PASSED
+```
 
-No values are imputed anywhere in the pipeline.
+The TP07 provenance check covered all 120 observations in each branch; maximum absolute
+differences were 5.00e-7 percentage points (General) and 4.97e-7 (Family). The rebuilt
+panel was then compared, on all 26 fields shared with the previously deposited
+`panel_takaful_uncert.csv`, after sorting by `iso3-period`; keys were identical and
+`all.equal(..., tolerance = 1e-6, check.attributes = FALSE)` returned `TRUE`.
 
-## Extracting a panel for a specific paper
+The 300-dpi figure-generation workflow and the Figure 3 / Figure 4 order were first run
+on the author's Windows machine under R 4.4.1 on 12 September 2026. `08_make_figures.R`
+was then rerun on 13 September 2026 after the Figure 1 margin/axis-label adjustment and
+the Figure 3 variable-panel regrouping. Figure 3 is grouped to match the manuscript:
+Panel A contains gross contributions, net contributions, retention and the expense
+ratio; Panel B contains investment income, penetration, density and operator count, with
+all seven jurisdictions shown in each panel. The four PNG files distributed in
+`figures/` are the output of that final 13 September run and are the same files
+reproduced in the manuscript:
+`figure1_reporting_pattern.png`, `figure2_ytd_distortion.png`,
+`figure3_missingness_map.png`, and `figure4_retention_profiles.png`.
 
-See the commented block at the end of `scripts/03_build_master.R` — for example, gross
-takāful contributions for seven jurisdictions, 2019Q1–2022Q4.
+The canonical data and structural checks are runtime-verified. The raw IFSB workbook is intentionally **not** redistributed; `raw/ifsb/RAW_FILES_GO_HERE.txt` marks where a user should place their source download.
 
-## Planned extensions
+## Optional sources
 
-World Uncertainty Index (quarterly), Swiss Re sigma (annual, total-insurance
-denominator), and World Bank WDI / WGI / IMF FAS series through the existing download
-scripts.
-
-## Citing this repository
-
-If you use this pipeline or the harmonised panel, please cite both the software and the
-accompanying data note.
-
-> Benkaddour, A. (2026). *IFSB-DataHub: a reproducible pipeline for the IFSB Prudential
-> and Structural Islamic Financial Indicators* (v1.0.0). Zenodo.
-> https://doi.org/10.5281/zenodo.21895283
-
-The concept DOI **10.5281/zenodo.21895282** always resolves to the most recent
-version; the version DOI **10.5281/zenodo.21895283** pins release v1.0.0
-specifically. Cite the version DOI when reproducibility matters, the concept DOI when
-referring to the project as a whole. See `CITATION.cff` for the machine-readable form.
+`02_import_turkey_windows.R` imports the legacy Turkey takaful-windows workbook for annual
+robustness work only. `05_import_wui.R` imports WUI only for the companion study. Neither
+is required to rebuild the canonical 120-row data-paper panel.
 
 ## Licence
 
-Code is released under the MIT Licence. Documentation and derived data files are
-released under CC BY 4.0. Raw PSIFIs files remain the property of the Islamic Financial
-Services Board and are not redistributed here.
+Code: MIT. Documentation and derived data: CC BY 4.0. Raw IFSB workbooks remain the
+property of their publisher and are not redistributed in this release.

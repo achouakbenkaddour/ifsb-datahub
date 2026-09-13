@@ -9,7 +9,11 @@
 # =============================================================================
 source(file.path("scripts", "00_setup.R"))
 
-f <- file.path(dir_raw, "turkey_takaful_windows.xls")
+candidates <- list.files(dir_raw, pattern = "Turkey_Takaful-Windows\\.xls$|turkey_takaful_windows\\.xls$",
+                         full.names = TRUE, ignore.case = TRUE)
+if (length(candidates) == 0) stop("Turkey windows workbook not found (optional for the data paper).")
+if (length(candidates) > 1) stop("Multiple Turkey windows workbooks found: ", paste(basename(candidates), collapse = ", "))
+f <- candidates[[1]]
 
 # .xls ancien format : readxl le lit nativement
 hdr <- read_excel(f, skip = 3, n_max = 0)
@@ -28,17 +32,19 @@ tw_long <- tw %>%
     iso3           = "TUR",
     country        = "Turkey",
     region         = NA_character_,
+    report_type    = "annual window",
     period,
     indicator_code = str_trim(Code),
     indicator_desc = str_trim(indicator_desc),
     currency       = str_trim(Currency),
     units          = str_trim(Units),
+    usd_exchange_rate = NA_real_,
     value_nc       = clean_num(value_raw),
     value_usd_mn   = NA_real_
   ) %>%
   bind_cols(split_period(.$period)) %>%
-  select(segment, iso3, country, region, period, year, quarter,
-         indicator_code, indicator_desc, currency, units, value_nc, value_usd_mn)
+  select(segment, iso3, country, region, report_type, period, year, quarter,
+         indicator_code, indicator_desc, currency, units, usd_exchange_rate, value_nc, value_usd_mn)
 
 saveRDS(tw_long, file.path(dir_clean, "psifis_takaful_windows_tur.rds"))
 

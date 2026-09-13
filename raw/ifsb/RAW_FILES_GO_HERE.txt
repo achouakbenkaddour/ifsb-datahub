@@ -1,0 +1,5 @@
+Place the manually downloaded IFSB source workbook(s) in this folder without editing them.
+For the canonical takāful data-paper rebuild, the required file is the timestamped
+ISLAMIC_INSURANCE_DATA_*.xlsx workbook from the IFSB Data Portal.
+The verified source vintage used for the paper was downloaded on 2026-07-19.
+Raw publisher files are intentionally not redistributed with this package.

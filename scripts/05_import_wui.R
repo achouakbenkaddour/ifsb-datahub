@@ -28,12 +28,14 @@ import_wui_sheet <- function(sheet, code_indicateur, description) {
       currency       = NA_character_,
       units          = "index",
       value_usd_mn   = NA_real_,
-      region         = NA_character_
+      region         = NA_character_,
+      report_type    = "quarterly",
+      usd_exchange_rate = NA_real_
     ) %>%
     left_join(country_map %>% select(iso3, country), by = "iso3") %>%
     bind_cols(split_period(.$period)) %>%
-    select(segment, iso3, country, region, period, year, quarter,
-           indicator_code, indicator_desc, currency, units,
+    select(segment, iso3, country, region, report_type, period, year, quarter,
+           indicator_code, indicator_desc, currency, units, usd_exchange_rate,
            value_nc, value_usd_mn)
 }
 
@@ -51,15 +53,16 @@ wui_glob <- t1 %>%
   filter(!is.na(value_nc)) %>%
   mutate(
     segment = "uncert", iso3 = "WLD", country = "World",
-    region = NA_character_,
+    region = NA_character_, report_type = "quarterly",
+    usd_exchange_rate = NA_real_,
     period = toupper(str_trim(period_raw)),
     indicator_code = "WUI_GLOBAL",
     indicator_desc = "WUI mondial (moyenne ponderee PIB)",
     currency = NA_character_, units = "index", value_usd_mn = NA_real_
   ) %>%
   bind_cols(split_period(.$period)) %>%
-  select(segment, iso3, country, region, period, year, quarter,
-         indicator_code, indicator_desc, currency, units,
+  select(segment, iso3, country, region, report_type, period, year, quarter,
+         indicator_code, indicator_desc, currency, units, usd_exchange_rate,
          value_nc, value_usd_mn)
 
 ext_wui <- bind_rows(wui_raw, wui_ma3, wui_glob) %>%

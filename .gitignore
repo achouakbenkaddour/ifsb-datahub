@@ -1,17 +1,41 @@
-raw/
+# Raw source files are never tracked — see docs/DATA_SOURCES.md
+# Keep only the placeholder that documents where local IFSB source files belong.
+raw/*
+!raw/ifsb/
+raw/ifsb/*
+!raw/ifsb/RAW_FILES_GO_HERE.txt
+
+# Never commit source workbooks downloaded from providers.
 *.xlsx
 *.xls
 !docs/*.xlsx
-clean/*
-!clean/panel_takaful_uncert.csv
+
+# R session artefacts
 .Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
 *.Rproj
-figures/
+
+# Publish only the intended derived products.
+clean/*
+!clean/panel_takaful_harmonised.csv
+!clean/panel_takaful_uncert.csv
+!clean/README.md
+
+# Keep the four manuscript figures; ignore other generated figure files.
+figures/*
+!figures/figure1_reporting_pattern.png
+!figures/figure2_ytd_distortion.png
+!figures/figure3_missingness_map.png
+!figures/figure4_retention_profiles.png
+
+# OS clutter
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Credentials — never commit
 .Renviron
 .env
 *.key

@@ -1,59 +1,36 @@
-# Data sources and how to rebuild `raw/`
+# Data sources and manual-download protocol
 
-Raw source files are not distributed in this repository. They remain the property of
-their publishers and are freely obtainable from the addresses below. This file records
-exactly what to download, where each file belongs, and how to verify that your extract
-matches the one used for the reference release.
+## Required source for the data paper
 
-## 1. IFSB PSIFIs
+**IFSB PSIFIs — Islamic Insurance Data**  
+Publisher: Islamic Financial Services Board (IFSB) Data Portal  
+Reference extraction used by the paper: **19 July 2026**  
+Original supplied filename in the verified rebuild: `ISLAMIC_INSURANCE_DATA_202607191918.xlsx`
 
-**Source:** Islamic Financial Services Board, Prudential and Structural Islamic
-Financial Indicators — <https://data.ifsb.org>
-**Access:** free, no registration required for the standard exports.
-**Reference extraction date:** 2026-07-19.
+Download the workbook manually from the IFSB portal and place it unchanged in `raw/ifsb/`.
+`01_import_psifis.R` accepts the timestamped portal filename directly; manual renaming is
+not required. The raw workbook is not redistributed with this repository.
 
-Download the following exports and place them in `raw/ifsb/`:
+Running `Rscript scripts/00_setup.R` from the repository root prints SHA-256 checksums of
+all files currently in `raw/ifsb/`. Keep this output with a local replication log if exact
+source-vintage provenance is required.
 
-| File | Segment |
-|---|---|
-| `islamic_banking_data.xlsx` | Banking |
-| `islamic_insurance_data.xlsx` | Takāful |
-| `islamic_capital_markets_data.xlsx` | Islamic capital markets |
-| `detailed_financial_statements.xlsx` | Detailed financial statements |
-| `turkey_takaful_windows.xls` | Türkiye takāful windows (annual reporting) |
+## Optional sources
 
-**Verifying your extract.** The portal is revised without notice, so an extract taken
-today will not necessarily match the reference release. Run `scripts/00_setup.R`, which
-prints a SHA-256 checksum for every file in `raw/ifsb/`. Compare these against
-`docs/checksums_20260719.txt`. If they differ, your extract is a different vintage —
-this is expected and not an error, but the extraction date must then be updated in the
-decisions log and reported in any resulting paper.
+The following are not required for the canonical 120-row takāful data-paper panel:
 
-## 2. World Uncertainty Index
+- IFSB Islamic Banking Data workbook
+- IFSB Islamic Capital Markets Data workbook
+- IFSB Detailed Financial Statements workbook
+- `Turkey_Takaful-Windows.xls` (annual robustness only)
+- World Uncertainty Index input used by the companion research study
 
-**Source:** Ahir, Bloom and Furceri, World Uncertainty Index —
-<https://worlduncertaintyindex.com>
-**Access:** free.
+If the first three timestamped IFSB workbooks are present in `raw/ifsb/`, script 01 imports
+them automatically into the broader master. Their absence does not stop the data-paper rebuild.
 
-Place in `raw/wui/`:
+## Fixed paper window
 
-| File | Content |
-|---|---|
-| `WUI_Data.xlsx` | Country-quarter uncertainty index |
-| `wui_global_visualizer.xlsx` | Global aggregate series |
-
-Imported by `scripts/05_import_wui.R`.
-
-## 3. Planned additions
-
-Swiss Re sigma (annual, total-insurance denominator), World Bank WDI and WGI, and IMF
-Financial Access Survey — to be pulled through download scripts rather than stored as
-files.
-
-## Why raw files are not tracked
-
-Two reasons. Redistribution of a publisher's files is a separate permission from access
-to them, and this repository does not assume it. And a raw file frozen in a repository
-silently ages: readers would take it for the current database when the portal has since
-been revised. Documenting the retrieval path and publishing checksums keeps the record
-honest and keeps the pipeline re-runnable against any vintage.
+The reference data-paper panel is explicitly restricted to **2019Q1–2023Q4** in script 06.
+This matters because the 19 July 2026 portal export itself contains later observations for
+some jurisdictions. Those later rows are source data, but they are outside the documented
+paper release and must not silently alter the 120-row reference panel.

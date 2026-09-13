@@ -1,28 +1,38 @@
 # =============================================================================
 # 00_setup.R — IFSB-DataHub
-# Chemins, packages, table de correspondance pays -> ISO3
-# Exécuter en premier ; est "source()" par tous les autres scripts.
+# Shared paths, packages, country map, numeric helpers, and SHA-256 utilities.
+# Run directly once to initialise folders and print checksums for raw source files.
+# Other scripts source() this file; checksum printing occurs only when run directly.
 # =============================================================================
 
+required_packages <- c("readxl", "dplyr", "tidyr", "stringr", "purrr",
+                       "readr", "openxlsx", "digest")
+missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
+                                               quietly = TRUE, FUN.VALUE = logical(1))]
+if (length(missing_packages) > 0) {
+  stop("Missing R packages: ", paste(missing_packages, collapse = ", "),
+       ". Install them before running the pipeline.")
+}
+
 suppressPackageStartupMessages({
-  library(readxl)   # lecture xlsx
+  library(readxl)
   library(dplyr)
   library(tidyr)
   library(stringr)
   library(purrr)
   library(readr)
-  library(openxlsx) # écriture xlsx (dictionnaire)
+  library(openxlsx)
 })
 
-# --- Racine du projet : à adapter si besoin ---------------------------------
-# setwd("chemin/vers/IFSB-DataHub")   # <- décommenter et adapter en local
+# Run all scripts from the repository root.
 dir_raw   <- file.path("raw", "ifsb")
 dir_clean <- "clean"
 dir_docs  <- "docs"
 dir_fig   <- "figures"
-for (d in c(dir_clean, dir_docs, dir_fig)) if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+for (d in c(dir_clean, dir_docs, dir_fig)) {
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+}
 
-# --- Correspondance pays -> ISO3 (clé d'harmonisation du hub) ---------------
 country_map <- tribble(
   ~country_raw,            ~iso3, ~country,
   "Afghanistan",           "AFG", "Afghanistan",
@@ -54,8 +64,6 @@ country_map <- tribble(
   "United Kingdom",        "GBR", "United Kingdom"
 )
 
-# --- Utilitaires -------------------------------------------------------------
-# Décompose "2019Q1" -> year = 2019, quarter = 1
 split_period <- function(x) {
   tibble(
     year    = as.integer(str_sub(x, 1, 4)),
@@ -63,11 +71,32 @@ split_period <- function(x) {
   )
 }
 
-# Nettoie une valeur numérique (gère "…", espaces, virgules)
 clean_num <- function(v) {
   v <- str_trim(as.character(v))
   v[v %in% c("…", "", "-", "N/A", "NA", "n.a.")] <- NA
-  as.numeric(str_replace_all(v, ",", ""))
+  suppressWarnings(as.numeric(str_replace_all(v, ",", "")))
 }
 
-message("00_setup.R : OK — ", nrow(country_map), " pays dans la table ISO3.")
+sha256_file <- function(path) {
+  if (!file.exists(path)) return(NA_character_)
+  digest::digest(file = path, algo = "sha256", serialize = FALSE)
+}
+
+print_raw_checksums <- function(raw_dir = dir_raw) {
+  if (!dir.exists(raw_dir)) {
+    message("No raw/ifsb directory found; create it and download source files first.")
+    return(invisible(NULL))
+  }
+  files <- sort(list.files(raw_dir, full.names = TRUE))
+  files <- files[file.info(files)$isdir %in% FALSE]
+  if (length(files) == 0) {
+    message("raw/ifsb exists but contains no files.")
+    return(invisible(NULL))
+  }
+  out <- tibble(file = basename(files), sha256 = vapply(files, sha256_file, character(1)))
+  print(out, n = Inf)
+  invisible(out)
+}
+
+message("00_setup.R : OK — ", nrow(country_map), " countries in ISO3 map.")
+if (sys.nframe() == 0L) print_raw_checksums()
